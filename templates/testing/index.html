@@ -1,0 +1,219 @@
+{% load static %}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Demo: Add custom markers in Mapbox GL JS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" />
+  <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+  <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+
+    .marker {
+      background-image: url("{% static 'images/mapbox-icon-schulen.png' %}");
+      background-size: cover;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .marker-blue {
+        background-image: url("{% static 'images/mapbox-icon-kindertageseinrichtungen.png' %}");
+        background-size: cover;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+      
+    .marker-schulsozialarbeit {
+            background-image: url("{% static 'images/mapbox-icon-schulsozialarbeit.png' %}");
+            background-size: cover;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+          }
+
+    .marker-jugendberufshilfen {
+                background-image: url("{% static 'images/mapbox-icon-jugendberufshilfen.png' %}");
+                background-size: cover;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                cursor: pointer;
+              }
+    /* .marker-blue {
+      width: 7px;
+      height: 7px;
+      background-color: rgb(81, 181, 248);
+      border-radius: 50%;
+      border-color: brown;
+      border: 0.5px solid red;
+      cursor: pointer;
+    } */
+
+    .mapboxgl-popup {
+      max-width: 200px;
+    }
+
+    .mapboxgl-popup-content {
+      text-align: center;
+      font-family: 'Open Sans', sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1Ijoid2hvaXNraGFpcnVsIiwiYSI6ImNrOHgxOGFhbTB0NDQzZ282eGw4bnczZHMifQ.YxAa3xH6abRfF60Z5bKm-w';
+
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [12.9076212, 50.8305291],
+      zoom: 10.7
+    });
+
+    // add markers to map
+
+    const geojson = JSON.parse('{{ schule|escapejs }}');
+    console.log(geojson);
+    for (const feature of geojson.features) {
+      // create a HTML element for each feature
+      // console.log(feature)
+      const el = document.createElement('div');
+      el.className = 'marker';
+
+      // make a marker for each feature and add it to the map
+      new mapboxgl.Marker(el)
+        .setLngLat(feature.geometry.coordinates)
+        .setPopup(
+          new mapboxgl.Popup({ offset: 25 }) // add popups
+            .setHTML(
+              `<h3>OBJECTID: ${feature.properties.objectid}</h3>
+                <p>ID :${feature.id}</p>
+                <p>TYP :${feature.properties.typ}</p>
+                <p>ART :${feature.properties.art}</p>
+                <p>STANDORTTYP :${feature.properties.standorttyp}</p>
+                <p>BEZEICHNUNG: ${feature.properties.bezeichnung}</p>
+                <p>BEZEICHNUNG :${feature.properties.bezeichnungzusatz}</p>
+                <p>KURZBEZEICHNUNG :${feature.properties.kurzbezeichnung}</p>
+                <p>STRASSE :${feature.properties.strasse}</p>
+                <p>PLZ :${feature.properties.plz}</p>
+                <p>ORT :${feature.properties.ort}</p>
+                <p>TELEFON :${feature.properties.telefon}</p>
+                <p>FAX :${feature.properties.fax}</p>
+                <p>EMAIL :${feature.properties.email}</p>
+                <p>PROFILE :${feature.properties.profile}</p>
+                <p>SPRACHEN :${feature.properties.sprachen}</p>
+                <p>WWW :${feature.properties.www}</p>
+                <p>TRAEGER :${feature.properties.traeger}</p>
+                <p>TRAEGERTYP :${feature.properties.traegertyp}</p>
+                <p>BEZUGNR :${feature.properties.bezugnr}</p>
+                <p>GEBIETSARTNUMMER :${feature.properties.gebietsartnummer}</p>
+                <p>SNUMMER :${feature.properties.snummer}</p>
+                <p>NUMMER :${feature.properties.nummer}</p>
+                <p>GlobalID :${feature.properties.globalid}</p>
+                <p>CreationDate :${feature.properties.creationdate}</p>
+                <p>Creator :${feature.properties.creator}</p>
+                <p>EditDate :${feature.properties.editdate}</p>
+                <p>Editor :${feature.properties.editor}</p>
+                <p>Editor :${feature.properties.editor}</p>
+
+
+
+                `
+            )
+        )
+        .addTo(map);
+    }
+
+    const Kindertageseinrichtungen = JSON.parse('{{ kindertageseinrichtungen|escapejs }}');
+
+    for (const feature of Kindertageseinrichtungen.features) {
+      // create a HTML element for each feature
+      const el = document.createElement('div');
+      el.className = 'marker-blue';
+
+      // make a marker for each feature and add it to the map
+      new mapboxgl.Marker(el)
+        .setLngLat(feature.geometry.coordinates)
+        .setPopup(
+          new mapboxgl.Popup({ offset: 25 }) // add popups
+            .setHTML(
+              `<h3>OBJECTID: ${feature.properties.objectid}</h3>
+                <p>ID :${feature.id}</p>
+                <p>TYP :${feature.properties.bezeichnung}</p>
+                `
+            )
+        )
+        .addTo(map);
+    }
+
+    const schulsozialarbeit = JSON.parse('{{ schulsozialarbeit|escapejs }}');
+
+    for (const feature of schulsozialarbeit.features) {
+      // create a HTML element for each feature
+      const el = document.createElement('div');
+      el.className = 'marker-schulsozialarbeit';
+
+      // make a marker for each feature and add it to the map
+      new mapboxgl.Marker(el)
+        .setLngLat(feature.geometry.coordinates)
+        .setPopup(
+          new mapboxgl.Popup({ offset: 25 }) // add popups
+            .setHTML(
+              `<h3>OBJECTID: ${feature.properties.objectid}</h3>
+                <p>ID :${feature.id}</p>
+                <p>TRAEGER :${feature.properties.traeger}</p>
+                `
+            )
+        )
+        .addTo(map);
+    }
+
+
+    const jugendberufshilfen = JSON.parse('{{ jugendberufshilfen|escapejs }}');
+
+    for (const feature of jugendberufshilfen.features) {
+      // create a HTML element for each feature
+      const el = document.createElement('div');
+      el.className = 'marker-jugendberufshilfen';
+
+      // make a marker for each feature and add it to the map
+      new mapboxgl.Marker(el)
+        .setLngLat(feature.geometry.coordinates)
+        .setPopup(
+          new mapboxgl.Popup({ offset: 25 }) // add popups
+            .setHTML(
+              `<h3>OBJECTID: ${feature.properties.objectid}</h3>
+                <p>ID :${feature.id}</p>
+                <p>TRAEGER :${feature.properties.traeger}</p>
+                `
+            )
+        )
+        .addTo(map);
+    }
+
+  </script>
+</body>
+
+</html>
