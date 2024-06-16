@@ -1,219 +1,112 @@
-{% load static %}
-
-<!doctype html>
-<html lang="en">
-
+<!DOCTYPE html>
+<html>
 <head>
-    <meta charset="utf-8" />
-    <title>Demo: Add custom markers in Mapbox GL JS</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" />
-    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
-    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+    <meta charset="utf-8">
+    <title>Address Autocomplete with Mapbox</title>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.js'></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
-
-        #map {
+        /* Basic styles for the suggestion list */
+        .suggestions {
+            border: 1px solid #ccc;
+            max-height: 200px;
+            overflow-y: auto;
             position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
+            z-index: 1000;
+            background: white;
+            width: calc(100% - 20px);
+            margin-top: 2px;
         }
-
-        .marker,
-        .marker-kinder,
-        .marker-schulsozialarbeit,
-        .marker-jugendberufshilfen{
-            background-image: url("{% static 'images/mapbox-icon-schulen.png' %}");
-            background-size: cover;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
+        .suggestion-item {
+            padding: 10px;
             cursor: pointer;
         }
-
-        .marker-kinder {
-            background-image: url("{% static 'images/mapbox-icon-kindertageseinrichtungen.png' %}");
-        }
-
-        .marker-schulsozialarbeit {
-            background-image: url("{% static 'images/mapbox-icon-schulsozialarbeit.png' %}");
-        }
-
-        .marker-jugendberufshilfen {
-            background-image: url("{% static 'images/mapbox-icon-jugendberufshilfen.png' %}");
-        }
-
-        /* .marker-blue {
-      width: 7px;
-      height: 7px;
-      background-color: rgb(81, 181, 248);
-      border-radius: 50%;
-      border-color: brown;
-      border: 0.5px solid red;
-      cursor: pointer;
-    } */
-
-        .mapboxgl-popup {
-            max-width: 200px;
-        }
-
-        .mapboxgl-popup-content {
-            text-align: center;
-            font-family: 'Open Sans', sans-serif;
+        .suggestion-item:hover,
+        .suggestion-item.active {
+            background-color: #f0f0f0;
         }
     </style>
 </head>
-
 <body>
-    <div id="map"></div>
-
+    <div style="position: relative; width: 300px; margin: 50px auto;">
+        <input type="text" id="address-input" class="w-full p-2 border border-gray-300" placeholder="Type your address" />
+        <div id="suggestions" class="suggestions"></div>
+    </div>
+    
     <script>
-        mapboxgl.accessToken = 'pk.eyJ1Ijoid2hvaXNraGFpcnVsIiwiYSI6ImNrOHgxOGFhbTB0NDQzZ282eGw4bnczZHMifQ.YxAa3xH6abRfF60Z5bKm-w';
+        mapboxgl.accessToken = 'pk.eyJ1Ijoid2hvaXNraGFpcnVsIiwiYSI6ImNrOHgxOGFhbTB0NDQzZ282eGw4bnczZHMifQ.YxAa3xH6abRfF60Z5bKm-w'; // Replace with your Mapbox access token
 
+        const addressInput = document.getElementById('address-input');
+        const suggestionsBox = document.getElementById('suggestions');
+        let selectedSuggestionIndex = -1;
 
-
-
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: [12.9076212, 50.8305291],
-            zoom: 10.7
+        addressInput.addEventListener('input', function() {
+            const query = addressInput.value;
+            if (query.length > 2) { // Start fetching suggestions after 3 characters
+                fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${mapboxgl.accessToken}&autocomplete=true&country=DE`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Filter suggestions to include only features with house numbers
+                        const houseNumberSuggestions = data.features.filter(feature => hasHouseNumber(feature));
+                        showSuggestions(houseNumberSuggestions);
+                    });
+            } else {
+                suggestionsBox.innerHTML = ''; // Clear suggestions if query length is less than 3
+                selectedSuggestionIndex = -1; // Reset selected suggestion index
+            }
         });
 
-        // add markers to map
-        // const geojson = JSON.parse('{{ schule|escapejs }}'); 
+        function hasHouseNumber(feature) {
+            // Check if the feature's address components contain a house number
+            console.log(feature)
+            return feature.address && feature.address.hasOwnProperty('house_number');
+        }
 
-        document.addEventListener("DOMContentLoaded", () => {
+        function showSuggestions(features) {
+            suggestionsBox.innerHTML = '';
+            features.forEach((feature, index) => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.textContent = feature.place_name;
+                item.addEventListener('click', () => {
+                    addressInput.value = feature.place_name;
+                    suggestionsBox.innerHTML = ''; // Clear suggestions
+                });
+                item.addEventListener('mouseenter', () => {
+                    setSelectedSuggestion(index);
+                });
+                suggestionsBox.appendChild(item);
+            });
+        }
 
-            const fetchSchulen = async () => {
-                try {
-                    const response = await fetch('http://127.0.0.1:8000/api/schulen/');
-                    if (!response.ok) {
-                        throw new Error(response.statusText);
-                    }
-                    geojson = await response.json();
-                    for (const feature of geojson.features) {
+        function setSelectedSuggestion(index) {
+            const items = document.querySelectorAll('.suggestion-item');
+            items.forEach(item => {
+                item.classList.remove('active');
+            });
+            if (index >= 0 && index < items.length) {
+                items[index].classList.add('active');
+            }
+            selectedSuggestionIndex = index;
+        }
 
-                        // create a HTML element for each feature
-                        const el = document.createElement('div');
-                        el.className = 'marker';
-
-                        // make a marker for each feature and add it to the map
-                        new mapboxgl.Marker(el)
-                            .setLngLat(feature.geometry.coordinates)
-                            .setPopup(
-                                new mapboxgl.Popup({ offset: 25 }) // add popups
-                                    .setHTML(
-                                        `
-                                        <h3>OBJECTID: ${feature.properties.objectid}</h3>
-                                        <h3>STRASSE: ${feature.properties.strasse}</h3>
-
-
-                                        `
-                                    )
-                            )
-                            .addTo(map);
-
-                    }
-                } catch (error) {
-                    console.error('Error while fetching:', error);
+        addressInput.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                setSelectedSuggestion(selectedSuggestionIndex - 1);
+            } else if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                setSelectedSuggestion(selectedSuggestionIndex + 1);
+            } else if (event.key === 'Enter') {
+                if (selectedSuggestionIndex !== -1) {
+                    event.preventDefault();
+                    const selectedSuggestion = document.querySelectorAll('.suggestion-item')[selectedSuggestionIndex];
+                    addressInput.value = selectedSuggestion.textContent;
+                    suggestionsBox.innerHTML = ''; // Clear suggestions
+                    addressInput.focus(); // Focus back on the input field after selection
                 }
-            };
-            fetchSchulen();
-
-            const fetchKindertageseinrichtungen = async () => {
-                try {
-                    const response = await fetch('http://127.0.0.1:8000/api/kindertageseinrichtungen/');
-                    if (!response.ok) {
-                        throw new Error(response.statusText);
-                    }
-                    geojson = await response.json();
-                    for (const feature of geojson.features) {
-
-                        // create a HTML element for each feature
-                        const el = document.createElement('div');
-                        el.className = 'marker-kinder';
-
-                        // make a marker for each feature and add it to the map
-                        new mapboxgl.Marker(el)
-                            .setLngLat(feature.geometry.coordinates)
-                            .setPopup(
-                                new mapboxgl.Popup({ offset: 25 }) // add popups
-                                    .setHTML(
-                                        `
-                                        <h3>OBJECTID: ${feature.properties.objectid}</h3>
-                                        <h3>STRASSE: ${feature.properties.strasse}</h3>
-
-
-                                        `
-                                    )
-                            )
-                            .addTo(map);
-
-                    }
-                } catch (error) {
-                    console.error('Error while fetching:', error);
-                }
-            };
-            fetchKindertageseinrichtungen();
-
+            }
         });
-
-        // for (const feature of geojson.features) {
-        //   // create a HTML element for each feature
-        //   // console.log(feature)
-        //   const el = document.createElement('div');
-        //   el.className = 'marker';
-
-        //   // make a marker for each feature and add it to the map
-        //   new mapboxgl.Marker(el)
-        //     .setLngLat(feature.geometry.coordinates)
-        // .setPopup(
-        //   new mapboxgl.Popup({ offset: 25 }) // add popups
-        //     .setHTML(
-        //       `<h3>OBJECTID: ${feature.properties.objectid}</h3>
-        //         <p>ID :${feature.id}</p>
-        //         <p>TYP :${feature.properties.typ}</p>
-        //         <p>ART :${feature.properties.art}</p>
-        //         <p>STANDORTTYP :${feature.properties.standorttyp}</p>
-        //         <p>BEZEICHNUNG: ${feature.properties.bezeichnung}</p>
-        //         <p>BEZEICHNUNG :${feature.properties.bezeichnungzusatz}</p>
-        //         <p>KURZBEZEICHNUNG :${feature.properties.kurzbezeichnung}</p>
-        //         <p>STRASSE :${feature.properties.strasse}</p>
-        //         <p>PLZ :${feature.properties.plz}</p>
-        //         <p>ORT :${feature.properties.ort}</p>
-        //         <p>TELEFON :${feature.properties.telefon}</p>
-        //         <p>FAX :${feature.properties.fax}</p>
-        //         <p>EMAIL :${feature.properties.email}</p>
-        //         <p>PROFILE :${feature.properties.profile}</p>
-        //         <p>SPRACHEN :${feature.properties.sprachen}</p>
-        //         <p>WWW :${feature.properties.www}</p>
-        //         <p>TRAEGER :${feature.properties.traeger}</p>
-        //         <p>TRAEGERTYP :${feature.properties.traegertyp}</p>
-        //         <p>BEZUGNR :${feature.properties.bezugnr}</p>
-        //         <p>GEBIETSARTNUMMER :${feature.properties.gebietsartnummer}</p>
-        //         <p>SNUMMER :${feature.properties.snummer}</p>
-        //         <p>NUMMER :${feature.properties.nummer}</p>
-        //         <p>GlobalID :${feature.properties.globalid}</p>
-        //         <p>CreationDate :${feature.properties.creationdate}</p>
-        //         <p>Creator :${feature.properties.creator}</p>
-        //         <p>EditDate :${feature.properties.editdate}</p>
-        //         <p>Editor :${feature.properties.editor}</p>
-        //         <p>Editor :${feature.properties.editor}</p>
-
-
-
-        //         `
-        //     )
-        // )
-        //     .addTo(map);
-        // }
-
     </script>
 </body>
-
 </html>

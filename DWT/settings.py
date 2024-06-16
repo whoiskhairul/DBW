@@ -26,8 +26,9 @@ SECRET_KEY = 'django-insecure-y2ep8nl8fpk$&#z7oikmmj=buc+9x43!uk2utt-(%z@ea^c^1o
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.106']
 
+SITE_ID = 1
 
 # Application definition
 
@@ -43,18 +44,44 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'rest_framework_gis',
+    'rest_framework.authtoken',
+    
     'corsheaders',
+
+    #allauth
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    
+    #rest auth
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
     
     'testapp',
+    'authapp'
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    
+}
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+
+    'allauth.account.middleware.AccountMiddleware',
 
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
@@ -156,3 +183,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SERIALIZATION_MODULES = {
     "geojson": "django.contrib.gis.serializers.geojson", 
  }
+
+REST_AUTH_REGISTER_SERIALIZERS = {
+    'REGISTER_SERIALIZER': 'authapp.serializers.CustomRegisterSerializer',
+}
+
+AUTH_USER_MODEL = 'authapp.NewUser'
+
+ACCOUNT_EMAIL_VERIFICATION = "none"

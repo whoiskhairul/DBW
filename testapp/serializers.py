@@ -31,3 +31,4 @@ class JugendberufshilfenGeoJSONSerializer(GeoFeatureModelSerializer):
         model = Jugendberufshilfen
         geo_field = 'coordinates'
         fields = '__all__'
+
