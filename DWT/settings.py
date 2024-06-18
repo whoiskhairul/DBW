@@ -184,9 +184,10 @@ SERIALIZATION_MODULES = {
     "geojson": "django.contrib.gis.serializers.geojson", 
  }
 
-REST_AUTH_REGISTER_SERIALIZERS = {
-    'REGISTER_SERIALIZER': 'authapp.serializers.CustomRegisterSerializer',
+REST_AUTH = {
+    'REGISTER_SERIALIZER': 'authapp.serializers.NewRegisterSerializer'
 }
+
 
 AUTH_USER_MODEL = 'authapp.NewUser'
 
