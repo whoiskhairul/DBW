@@ -16,7 +16,11 @@ from . import views
 
 urlpatterns = [
     path('', views.tesing, name='testing'),
-    path('update-data/', views.updateData, name='testing'),
     path('geojson/', views.geojson, name='geojson'),
+    path('facilities/', views.facilitiesName, name='fac'),
+    path('add-to-favourite/', views.add_to_favourite, name='favourite'),
+    path('direction/', views.direction, name='direction'),
+    path('update-data/', views.updateData, name='up'),
+    
     # path('api/', include(router.urls)),
 ]

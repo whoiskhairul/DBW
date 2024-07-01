@@ -5,10 +5,14 @@ from django.core.serializers import serialize
 
 import requests
 
-from rest_framework.views import APIView
+
 from rest_framework import viewsets
 from rest_framework.response import Response
-from .serializers import SchulenGeoJSONSerializer, KindertageseinrichtungenGeoJSONSerializer, SchulsozialarbeitGeoJSONSerializer, JugendberufshilfenGeoJSONSerializer
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+
+from django.contrib.auth import get_user_model
+from .serializers import JugendberufshilfenSerializer, KindertageseinrichtungenSerializer, SchulenGeoJSONSerializer, KindertageseinrichtungenGeoJSONSerializer, SchulenSerializer, SchulsozialarbeitGeoJSONSerializer, JugendberufshilfenGeoJSONSerializer, SchulsozialarbeitSerializer
 
 
 from testapp.models import Schulen, Kindertageseinrichtungen, Schulsozialarbeit, Jugendberufshilfen
@@ -180,7 +184,9 @@ def updateData(request):
 
     
             
-    return render(request, 'testing/static.html')
+    return JsonResponse({
+        'message': 'Database updated successfully'
+    })
 
 def geojson(request):
     obj = Schulen.objects.all()
@@ -189,3 +195,97 @@ def geojson(request):
     # print('hello')
     
     return render(request, 'testing/geojson.html')
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+@api_view(['GET'])
+def facilitiesName(request):
+    queryset1 = list(Schulen.objects.values_list('bezeichnung', flat=True))
+    queryset2 = list(Kindertageseinrichtungen.objects.values_list('bezeichnung', flat=True))
+    queryset3 = list(Schulsozialarbeit.objects.values_list('traeger', flat=True))
+    queryset4 = list(Jugendberufshilfen.objects.values_list('traeger', flat=True))
+
+    return Response({
+        'Schulen': queryset1,
+        'Kindertageseinrichtungen': queryset2,
+        'Schulsozialarbeit': queryset3,
+        'Jugendberufshilfen': queryset4,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def add_to_favourite(request):
+    # Accessing a query parameter named 'sourceId' and 'id'
+    print(request.user)
+    sourceId = request.GET.get('sourceId', '')
+    id = request.GET.get('id', '')
+    
+    # Get the user
+    User = get_user_model()
+    user = User.objects.get(username=request.user.username)
+    if sourceId == 'Schulen':
+        s = Schulen.objects.get(id = int(id)).bezeichnung
+    elif sourceId == 'Kindertageseinrichtungen':
+        s = Kindertageseinrichtungen.objects.get(id = int(id)).bezeichnung
+    if sourceId == 'Schulsozialarbeit':
+        s = Schulsozialarbeit.objects.get(id = int(id)).traeger
+    if sourceId == 'Jugendberufshilfen':
+        s = Jugendberufshilfen.objects.get(id = int(id)).traeger
+
+    # facility_name = sourceId.objects.get(id= id)
+    print (sourceId, s)
+
+    # Update the favourite_facility field
+    user.favourite_facility = s
+    user.save()
+
+    return Response({
+        'message': 'Favourite facility updated successfully'
+    })
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def direction(request):
+    # Accessing a query parameter named 'sourceId' and 'id'
+    # print(request.user.username)
+    User = get_user_model()
+    user = User.objects.get(username=request.user.username)
+    home = user.home_address
+    
+    fav = user.favourite_facility
+    # fav = Jugendberufshilfen.objects.filter(traeger = fav)[0].coordinates
+    latitude = ''
+    longtude = ''
+    try:
+        latitude = Jugendberufshilfen.objects.filter(traeger = fav).first().latitude
+        longtude = Jugendberufshilfen.objects.filter(traeger = fav).first().longitude
+    except:
+        pass
+    try:
+        latitude = Schulen.objects.filter(bezeichnung = fav).first().latitude
+        longtude = Schulen.objects.filter(bezeichnung = fav).first().longitude
+    except:
+        pass
+    try:
+        latitude = Schulsozialarbeit.objects.filter(bezeichnung = fav).first().latitude
+        longtude = Schulsozialarbeit.objects.filter(bezeichnung = fav).first().longitude
+    except:
+        pass
+    try:
+        latitude = Kindertageseinrichtungen.objects.filter(bezeichnung = fav).first().latitude
+        longtude = Kindertageseinrichtungen.objects.filter(bezeichnung = fav).first().longitude
+    except:
+        pass
+    latlong = str(longtude) + "," + str(latitude)
+    print("latlong: ", latlong )
+    # Get the user
+    
+    return Response({
+        'source': home,
+        'destination':latlong,
+    })

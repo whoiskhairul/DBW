@@ -187,6 +187,7 @@ SERIALIZATION_MODULES = {
 REST_AUTH = {
     'REGISTER_SERIALIZER': 'authapp.serializers.NewRegisterSerializer'
 }
+SESSION_LOGIN = False
 
 
 AUTH_USER_MODEL = 'authapp.NewUser'

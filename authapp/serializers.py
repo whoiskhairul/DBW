@@ -21,3 +21,10 @@ class NewUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewUser
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'home_address', 'favourite_facility']  # Add any other fields you want to include
+
+
+
+class NewUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NewUser
+        fields = ['username', 'home_address', 'favourite_facility']

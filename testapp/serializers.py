@@ -32,3 +32,26 @@ class JugendberufshilfenGeoJSONSerializer(GeoFeatureModelSerializer):
         geo_field = 'coordinates'
         fields = '__all__'
 
+
+
+class SchulenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Schulen
+        fields = 'bezeichnung'
+
+class KindertageseinrichtungenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Kindertageseinrichtungen
+        fields = 'bezeichnung'
+
+class SchulsozialarbeitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Schulsozialarbeit
+        fields = 'bezeichnung'
+
+class JugendberufshilfenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Jugendberufshilfen
+        fields = 'bezeichnung'
+
+
